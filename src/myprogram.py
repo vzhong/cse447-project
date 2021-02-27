@@ -18,7 +18,7 @@ class MyModel:
     @classmethod
     def load_training_data(cls):
         # trainPath = r'../shortTranslations/AllTrain'
-        trainPath = r'../data/VeryShort'
+        trainPath = r'data/train'
         files = os.listdir(trainPath)
         out = {}
         for f in files:
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         train_data = MyModel.load_training_data()
         print('Training')
         model.run_train(train_data, args.work_dir)
-        print(model.lang_to_ngrams)
+        print(list(model.lang_to_ngrams.keys()))
         print('Saving model')
         model.save(args.work_dir)
     elif args.mode == 'test':
