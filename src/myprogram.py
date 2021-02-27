@@ -100,7 +100,7 @@ class MyModel:
         l1 = 0.3
         l2 = 0.3
         l3 = 0.4
-        for inp in data:
+        for inp in  :
             inp = "--" + inp  # start padding
             prefix = inp[-2:]  # last 2 chars in input
             # dict of lang code -> list of dictionaries
