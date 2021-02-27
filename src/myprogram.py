@@ -10,7 +10,7 @@ class MyModel:
     """
     This is a starter model to get you started. Feel free to modify this file.
     """
-    n = 6
+    n = 3
     # lang -> ngrams -> list[unigram, bigram ...], each model is a dictionary {prefix:probablity}
     lang_to_ngrams = {}
     start_char = '¢'
@@ -100,8 +100,28 @@ class MyModel:
         l1 = 0.3
         l2 = 0.3
         l3 = 0.4
-        for inp in  :
-            inp = "--" + inp  # start padding
+        for inp in data:
+
+            # create a list of languages that it could be, creating a score for each language
+            langScores = {}
+            maxScore = 0
+            for lang in self.lang_to_ngrams:
+                score = 0
+                for char in inp:
+                    curScore = self.lang_to_ngrams[lang][0][char]
+                    if curScore == None:
+                        curScore = 0
+                    score += curScore
+                if score > maxScore:
+                    maxScore = score
+                langScores[lang] = score
+            for lang in self.lang_to_ngrams:
+                norm = 0
+                if maxScore != 0:
+                    norm = langScores[lang] / maxScore
+                langScores[lang] = norm
+            
+            inp = "¢¢" + inp  # start padding
             prefix = inp[-2:]  # last 2 chars in input
             # dict of lang code -> list of dictionaries
             # unigram char to prob
