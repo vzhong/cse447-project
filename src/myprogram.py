@@ -10,7 +10,7 @@ class MyModel:
     """
     This is a starter model to get you started. Feel free to modify this file.
     """
-    n = 3
+    n = 6
     # lang -> ngrams -> list[unigram, bigram ...], each model is a dictionary {prefix:probablity}
     lang_to_ngrams = {}
     start_char = '¢'
