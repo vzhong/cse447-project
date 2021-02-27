@@ -97,16 +97,58 @@ class MyModel:
     def run_pred(self, data):
         # your code here
         preds = []
-        all_chars = string.ascii_letters
+        l1 = 0.3
+        l2 = 0.3
+        l3 = 0.4
         for inp in data:
-            # this model just predicts a random character each time
-            top_guesses = [random.choice(all_chars) for _ in range(3)]
+            inp = "--" + inp  # start padding
+            prefix = inp[-2:]  # last 2 chars in input
+            # dict of lang code -> list of dictionaries
+            # unigram char to prob
+            # bigram, trigram -> dict is prefix in tuple to any suffix probability
+
+            # prefix = "lo"
+            top_guesses = dict()
+            for lang in self.lang_to_ngrams:
+                lang_models = self.lang_to_ngrams[lang]
+
+                unigram_model = lang_models[0]
+                bigram_model = lang_models[1]
+                trigram_model = lang_models[2]
+
+                token_to_prob = dict()
+                for token in unigram_model:
+                    # Probability
+                    unigram_probability = unigram_model[token]
+
+                    # Check to ensure tokens in models
+                    bigram_probability = 0.0
+                    if prefix[1] in bigram_model and token in bigram_model[prefix[1]]:
+                        bigram_probability += bigram_model[prefix[1]][token]
+
+                    trigram_probability = 0.0
+                    if (prefix[0], prefix[1]) in trigram_model and token in trigram_model[prefix[0], prefix[1]]:
+                        trigram_probability += trigram_model[prefix[0], prefix[1]]
+
+                    interpolated_probability = l1 * unigram_probability + l2 * bigram_probability + l3 * trigram_probability
+
+                    token_to_prob[token] = interpolated_probability
+
+                # Get current three chars with highest probability
+                highest = sorted(token_to_prob, key=token_to_prob.get, reverse=True)[:3]
+
+                for token in highest:
+                    if token not in top_guesses or (token in top_guesses and token_to_prob[token] > top_guesses[token]):
+                        top_guesses[token] = token_to_prob[token]
+
+            # Get overall three chars with highest prob
+            top_guesses = sorted(token_to_prob, key=token_to_prob.get, reverse=True)[:3]
+
             preds.append(''.join(top_guesses))
+
         return preds
 
     def save(self, work_dir):
-        # your code here
-        # this particular model has nothing to save, but for demonstration purposes we will save a blank file
         with open(os.path.join(work_dir, 'model.checkpoint'), 'wb') as f:
             pickle.dump(self.lang_to_ngrams, f)
 
@@ -144,7 +186,7 @@ if __name__ == '__main__':
         train_data = MyModel.load_training_data()
         print('Training')
         model.run_train(train_data, args.work_dir)
-        print(list(model.lang_to_ngrams.keys()))
+        print(model.lang_to_ngrams['en'])
         print('Saving model')
         model.save(args.work_dir)
     elif args.mode == 'test':
