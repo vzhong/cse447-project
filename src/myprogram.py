@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import math
 import string
 import random
 import pickle
@@ -10,7 +11,8 @@ class MyModel:
     """
     This is a starter model to get you started. Feel free to modify this file.
     """
-    n = 3
+    #  = 3
+    # should just be unigram now for weighting before neural predict
     # lang -> ngrams -> list[unigram, bigram ...], each model is a dictionary {prefix:probablity}
     lang_to_ngrams = {}
     start_char = '¢'
@@ -40,8 +42,19 @@ class MyModel:
 
     def run_train(self, data, work_dir):
         for lang in data:
-            self.lang_to_ngrams[lang] = []
-            for i in range(len(data[lang])):
+            self.lang_to_ngrams[lang] = {}
+            total_counts = 0
+            for line in data[lang]:
+                for c in line:
+                    if c not in self.lang_to_ngrams[lang]:
+                        self.lang_to_ngrams[lang][c] = 0
+                    self.lang_to_ngrams[c] += 1
+                    total_counts += 1
+
+            for c in self.lang_to_ngrams[lang]:
+                self.lang_to_ngrams[lang][c] /= total_counts
+
+            """for i in range(len(data[lang])):
                 data[lang][i] = (self.n - 1) * self.start_char + data[lang][i] + self.stop_char
 
             # constuct frequency maps and total counts
@@ -51,6 +64,7 @@ class MyModel:
                 total_counts[i] = {}
             # unigram is a special case
             total_counts[0] = 0
+
             # fill in frequency maps
             for line in data[lang]:
                 for i in range(len(line)):
@@ -92,7 +106,7 @@ class MyModel:
                 else:
                     for prefix in self.lang_to_ngrams[lang][model_index]:
                         for char in self.lang_to_ngrams[lang][model_index][prefix]:
-                            self.lang_to_ngrams[lang][model_index][prefix][char] /= total_counts[model_index][prefix]
+                            self.lang_to_ngrams[lang][model_index][prefix][char] /= total_counts[model_index][prefix]"""
 
     def run_pred(self, data):
         # your code here
@@ -104,21 +118,30 @@ class MyModel:
 
             # create a list of languages that it could be, creating a score for each language
             langScores = {}
+            langProbabilities = {}
             maxScore = 0
+            z = 0
             for lang in self.lang_to_ngrams:
                 score = 0
-                unigram = self.lang_to_ngrams[lang][0]
+                unigram = self.lang_to_ngrams[lang]
                 for char in inp:
                     curScore = unigram.get(char, 0)
                     score += curScore
+
                 if score > maxScore:
                     maxScore = score
+
                 langScores[lang] = score
+                z += math.exp(score)
+
             for lang in self.lang_to_ngrams:
                 norm = 0
                 if maxScore != 0:
                     norm = langScores[lang] / maxScore
                 langScores[lang] = norm
+
+            for lang in self.lang_to_ngrams:
+                langProbabilities[lang] = math.exp(langScores[lang]) / z
             
             inp = "¢¢" + inp  # start padding
             prefix = inp[-2:]  # last 2 chars in input
@@ -127,7 +150,7 @@ class MyModel:
             # bigram, trigram -> dict is prefix in tuple to any suffix probability
 
             # prefix = "lo"
-            top_guesses = dict()
+            """top_guesses = dict()
             for lang in self.lang_to_ngrams:
                 lang_models = self.lang_to_ngrams[lang]
 
@@ -165,7 +188,7 @@ class MyModel:
             # Get overall three chars with highest prob
             top_guesses = sorted(token_to_prob, key=token_to_prob.get, reverse=True)[:3]
 
-            preds.append(''.join(top_guesses))
+            preds.append(''.join(top_guesses))"""
 
         return preds
 
