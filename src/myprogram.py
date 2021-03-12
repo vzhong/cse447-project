@@ -97,9 +97,9 @@ class MyModel:
     def run_pred(self, data):
         # your code here
         preds = []
-        l1 = 0.3
+        l1 = 0.2
         l2 = 0.3
-        l3 = 0.4
+        l3 = 0.5
         for inp in data:
 
             # create a list of languages that it could be, creating a score for each language
