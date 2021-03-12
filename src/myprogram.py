@@ -107,10 +107,9 @@ class MyModel:
             maxScore = 0
             for lang in self.lang_to_ngrams:
                 score = 0
+                unigram = self.lang_to_ngrams[lang][0]
                 for char in inp:
-                    curScore = self.lang_to_ngrams[lang][0][char]
-                    if curScore == None:
-                        curScore = 0
+                    curScore = unigram.get(char, 0)
                     score += curScore
                 if score > maxScore:
                     maxScore = score
@@ -151,15 +150,17 @@ class MyModel:
                         trigram_probability += trigram_model[prefix[0], prefix[1]]
 
                     interpolated_probability = l1 * unigram_probability + l2 * bigram_probability + l3 * trigram_probability
-
+                    interpolated_probability *= langScores[lang]
                     token_to_prob[token] = interpolated_probability
 
                 # Get current three chars with highest probability
                 highest = sorted(token_to_prob, key=token_to_prob.get, reverse=True)[:3]
 
                 for token in highest:
-                    if token not in top_guesses or (token in top_guesses and token_to_prob[token] > top_guesses[token]):
-                        top_guesses[token] = token_to_prob[token]
+                    oldScore = top_guesses.get(token, 0) + token_to_prob[token]
+                    top_guesses[token] = oldScore
+                    # if token not in top_guesses or (token in top_guesses and token_to_prob[token] > top_guesses[token]):
+                    #     top_guesses[token] = token_to_prob[token]
 
             # Get overall three chars with highest prob
             top_guesses = sorted(token_to_prob, key=token_to_prob.get, reverse=True)[:3]
@@ -206,7 +207,6 @@ if __name__ == '__main__':
         train_data = MyModel.load_training_data()
         print('Training')
         model.run_train(train_data, args.work_dir)
-        print(model.lang_to_ngrams['en'])
         print('Saving model')
         model.save(args.work_dir)
     elif args.mode == 'test':
