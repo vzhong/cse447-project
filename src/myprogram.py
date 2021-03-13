@@ -325,7 +325,7 @@ class MyModel:
         with open(os.path.join(work_dir, 'model.checkpoint'), 'wb') as f:
             pickle.dump(self.model, f)
 
-    @ classmethod
+    @classmethod
     def load(cls, work_dir):
         # your code here
         # this particular model has nothing to load, but for demonstration purposes we will load a blank file
