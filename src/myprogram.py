@@ -124,7 +124,7 @@ class MyModel:
     @classmethod
     def load_training_data(cls):
         # trainPath = r'../shortTranslations/AllTrain'
-        trainPath = r'data/train'
+        trainPath = r'data/shortTrain'
         files = os.listdir(trainPath)
         out = {}
         for f in files:
