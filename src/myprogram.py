@@ -12,7 +12,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from tqdm import tqdm
 
 class LangModel(nn.Module):
-    def __init__(self, n_hidden=256, n_layers=4, drop_prob=0.3, lr=0.001):
+    def __init__(self, vocab_size, n_hidden=256, n_layers=4, drop_prob=0.3, lr=0.001):
         super().__init__()
         
         self.drop_prob = drop_prob
@@ -69,16 +69,12 @@ class MyModel:
     """
     This is a starter model to get you started. Feel free to modify this file.
     """
-    #  = 3
-    # should just be unigram now for weighting before neural predict
-    # lang -> ngrams -> list[unigram, bigram ...], each model is a dictionary {prefix:probablity}
-    lang_to_ngrams = {}
 
     # lang -> list[unigram, NLM, int2token, token2int]
     model = {}
 
-
-    def create_seq(text, seq_len=5):
+    @classmethod
+    def create_seq(cls, text, seq_len=5):
         sequences = []
         if len(text) > seq_len:
             for i in range(seq_len, len(text)):
@@ -89,18 +85,19 @@ class MyModel:
             return []
 
     # gets the integer sequence given token2int
-    def get_integer_seq(seq, token2int):
+    @classmethod
+    def get_integer_seq(cls, seq, token2int):
         return [token2int[c] for c in seq]
 
     # data is the lines of the training data
     # returns an int array for the input and output of the data
     # returns int2token and token2int
-    def getData(data):
-        seqs = [create_seq(i) for i in data]
+    @classmethod
+    def getData(cls, data):
+        seqs = [MyModel.create_seq(i) for i in data]
         seqs = sum(seqs, [])
         x = []
         y = []
-
         for s in seqs:
             x.append("".join(list(s)[:-1]))
             y.append("".join(list(s)[1:]))
@@ -113,13 +110,13 @@ class MyModel:
         token2int = {t: i for i, t in int2token.items()}
         vocab_size = len(int2token)
         # convert char sequences to integer sequences
-        x_int = [get_integer_seq(i, token2int) for i in x]
-        y_int = [get_integer_seq(i, token2int) for i in y]
+        x_int = [MyModel.get_integer_seq(i, token2int) for i in x]
+        y_int = [MyModel.get_integer_seq(i, token2int) for i in y]
 
         # convert lists to numpy arrays
         x_int = np.array(x_int)
         y_int = np.array(y_int)
-        return x_int, y_int, int2token, token2int
+        return x_int, y_int, int2token, token2int, vocab_size
 
     @classmethod
     def load_training_data(cls):
@@ -129,14 +126,15 @@ class MyModel:
         out = {}
         for f in files:
             lang_code = f[:f.find('train')]
-            f_ = open(os.path.join(trainPath, f), "r", encoding='utf-16')
+            f_ = open(os.path.join(trainPath, f), "r")
             out[lang_code] = [f_.read().split("\n")]
         for lang in out:
-            x_int, y_int, int2token, token2int = getData(out[lang])
+            x_int, y_int, int2token, token2int, vocab_size = MyModel.getData(out[lang][0])
             out[lang].append(x_int)
             out[lang].append(y_int)
             out[lang].append(int2token)
             out[lang].append(token2int)
+            out[lang].append(vocab_size)
         return out
 
     @classmethod
@@ -150,7 +148,8 @@ class MyModel:
             for p in preds:
                 f.write('{}\n'.format(p))
 
-    def get_batches(arr_x, arr_y, batch_size):
+    @classmethod
+    def get_batches(cls, arr_x, arr_y, batch_size):
         # iterate through the arrays
         prv = 0
         for n in range(batch_size, arr_x.shape[0], batch_size):
@@ -159,7 +158,8 @@ class MyModel:
             prv = n
             yield x, y
 
-    def train_single(net, device, x_int, y_int, epochs=10, batch_size=32, lr=0.001, clip=1, print_every=32):
+    @classmethod
+    def train_single(cls, net, device, x_int, y_int, epochs=10, batch_size=32, lr=0.001, clip=1):
         
         # optimizer
         opt = torch.optim.Adam(net.parameters(), lr=lr)
@@ -172,7 +172,7 @@ class MyModel:
         for e in tqdm(range(epochs)):
             # initialize hidden state
             h = net.init_hidden(batch_size, device)
-            for x, y in get_batches(x_int, y_int, batch_size):
+            for x, y in MyModel.get_batches(x_int, y_int, batch_size):
                 counter += 1
 
                 # convert numpy arrays to PyTorch arrays
@@ -213,6 +213,7 @@ class MyModel:
             y_int = data[lang][2]
             int2token = data[lang][3]
             token2int = data[lang][4]
+            vocab_size = data[lang][5]
             # train the unigram model
             for line in unigramData:
                 for c in line:
@@ -220,19 +221,20 @@ class MyModel:
                     curUnigram[c] = count + 1
                     total_counts += 1
 
-            for c in curUnigram[lang]:
-                curUnigram[lang][c] /= total_counts
+            for c in curUnigram:
+                curUnigram[c] /= total_counts
             # train and create the NLM
             self.model[lang].append(curUnigram)
-            net = LangModel()
-            train(net, device, batch_size=1024, epochs=20)
+            net = LangModel(vocab_size)
+            MyModel.train_single(net, device, x_int, y_int, epochs=20, batch_size=1800)
             self.model[lang].append(net)
             self.model[lang].append(int2token)
             self.model[lang].append(token2int)
 
 
     # predict next token
-    def predict(net, tkn, device, int2token, token2int, h=None):
+    @classmethod
+    def predict(cls, net, tkn, device, int2token, token2int, h=None):
             
         # tensor inputs
         x = np.array([[token2int[tkn]]])
@@ -262,20 +264,19 @@ class MyModel:
         return [int2token[i] for i in top_n_idx], [p[i] for i in top_n_idx], h
 
     # function to generate text
-    def sample(net, device, int2token, token2int, prime):
+    @classmethod
+    def sample(cls, net, device, int2token, token2int, prime):
         net.to(device)
         net.eval()
         h = net.init_hidden(1, device)
         # predict next token
         for t in prime:
-            token, probs, h = predict(net, t, device, h)
+            print(t)
+            token, probs, h = MyModel.predict(net, t, device, int2token, token2int, h)
         return token, probs
 
     def run_pred(self, data, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
         preds = []
-        l1 = 0.2
-        l2 = 0.3
-        l3 = 0.5
         for inp in data:
 
             # create a list of languages that it could be, creating a score for each language
@@ -288,7 +289,7 @@ class MyModel:
                 unigram = self.model[lang][0]
                 for char in inp:
                     curScore = unigram.get(char, 0)
-                    score *= curScore
+                    score += curScore
 
                 if score > maxScore:
                     maxScore = score
@@ -304,18 +305,20 @@ class MyModel:
 
             for lang in self.model:
                 langProbabilities[lang] = math.exp(langScores[lang]) / z
-            
-            charGuesses = {}
+            charGuesses = dict()
             # wont work if there is not tokens so we need to make sure 
             for lang in langScores:
                 if langScores[lang] > 0:
                     net = self.model[lang][1]
                     int2token = self.model[lang][2]
                     token2int = self.model[lang][3]
-                    letters, scores = sample(net, device, int2token, token2int, inp)
+                    letters, scores = MyModel.sample(net, device, int2token, token2int, inp)
                     for i in range(len(letters)):
-                        oldScore = charGuesses.get(letters[i], 0)
-                        charGuesses[letters[i]] += scores[i] * langProbabilities[lang]
+                        curLetter = letters[i]
+                        oldScore = charGuesses.get(curLetter, 0)
+                        thisScore = scores[i]
+                        thisScore *= langProbabilities[lang]
+                        charGuesses[letters[i]] = oldScore + thisScore
             top_guesses = sorted(charGuesses, key=charGuesses.get, reverse=True)[:3]
             preds.append(''.join(top_guesses))
 
