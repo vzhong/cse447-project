@@ -2,19 +2,28 @@
 import os
 import string
 import random
+import pickle
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
+import train_helper as th
+from predict import pred
 
 class MyModel:
     """
     This is a starter model to get you started. Feel free to modify this file.
     """
 
+    def __init__(self):
+        self.unigram_data = None
+        self.bigram_data = None
+        self.trigram_data = None
+        self.unknown_char_set = None
+
     @classmethod
     def load_training_data(cls):
-        # your code here
-        # this particular model doesn't train
-        return []
+        train_file = 'src/train_data.txt'
+        with open(train_file) as f:
+            return f.readlines()
 
     @classmethod
     def load_test_data(cls, fname):
@@ -34,31 +43,49 @@ class MyModel:
 
     def run_train(self, data, work_dir):
         # your code here
-        pass
-
+        N, char_count, unknown_chars = th.unigram(data)
+        self.unigram_data = (N, char_count)
+        self.bigram_data = th.bigram(data, unknown_chars)
+        self.trigram_data = th.trigram(data, unknown_chars)
+        self.unknown_char_set = unknown_chars
+        
     def run_pred(self, data):
         # your code here
+        lambda_values = [0.325, 0.325, 0.35]
+        N, char_count = self.unigram_data
+        bigram_sum, bigram_count = self.bigram_data
+        trigram_sum, trigram_count = self.trigram_data
+        vocab = set(char_count.keys())
         preds = []
-        all_chars = string.ascii_letters
         for inp in data:
-            # this model just predicts a random character each time
-            top_guesses = [random.choice(all_chars) for _ in range(3)]
-            preds.append(''.join(top_guesses))
+            tok_1, tok_2 = '<start>', '<start>'
+            if len(inp)>= 1:
+                tok_2 = inp[-1]
+            if len(inp) >= 2:
+                tok_1 = inp[-2]
+            top_3 = pred(N, char_count, self.unknown_char_set, vocab, bigram_sum, 
+                        bigram_count, trigram_sum, trigram_count, lambda_values, tok_1, tok_2)
+            preds.append(top_3)
         return preds
 
     def save(self, work_dir):
-        # your code here
-        # this particular model has nothing to save, but for demonstration purposes we will save a blank file
-        with open(os.path.join(work_dir, 'model.checkpoint'), 'wt') as f:
-            f.write('dummy save')
+        temp_file = 'checkpoint.pkl'
+        fullpath = os.path.join(work_dir, temp_file)
+        with open(fullpath, 'wb') as f:
+            pickle.dump(self.unigram_data, f)
+            pickle.dump(self.bigram_data, f)
+            pickle.dump(self.trigram_data, f)
+            pickle.dump(self.unknown_char_set, f)
 
     @classmethod
     def load(cls, work_dir):
-        # your code here
-        # this particular model has nothing to load, but for demonstration purposes we will load a blank file
-        with open(os.path.join(work_dir, 'model.checkpoint')) as f:
-            dummy_save = f.read()
-        return MyModel()
+        model = cls()
+        with open(os.path.join(work_dir, 'checkpoint.pkl'), 'rb') as f:
+            model.unigram_data = pickle.load(f)
+            model.bigram_data = pickle.load(f)
+            model.trigram_data = pickle.load(f)
+            model.unknown_char_set = pickle.load(f)
+        return model
 
 
 if __name__ == '__main__':
@@ -68,8 +95,6 @@ if __name__ == '__main__':
     parser.add_argument('--test_data', help='path to test data', default='example/input.txt')
     parser.add_argument('--test_output', help='path to write test predictions', default='pred.txt')
     args = parser.parse_args()
-
-    random.seed(0)
 
     if args.mode == 'train':
         if not os.path.isdir(args.work_dir):

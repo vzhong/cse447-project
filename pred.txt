@@ -1,0 +1,13 @@
+eor
+wrt
+rtn
+rds
+aei
+eta
+eai
+gte
+rnu
+rtn
+eai
+lnt
+ets
