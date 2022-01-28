@@ -1,0 +1,8 @@
+Dataset: 
+For now, we're using a subset of the One Billion Word Dataset. For future checkpoints, we plan on using either the full version of this dataset (if possible) 
+or a larger subset. Obtaining the data is easy. The dataset can be downloaded from here - http://statmt.org/wmt11/training-monolingual.tgz
+
+Method:
+We will implement our model in python. Right now, our model combines a unigram, bigram and trigram using smoothing. 
+For future checkpoints, we might switch to some sort of a neural network, using libraries provided in common 
+machine learning frameworks like pytorch. 
