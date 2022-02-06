@@ -18,8 +18,8 @@ if __name__ == "__main__":
     dataset = text_dataset.TextDataset(sequence_length, train_path)
     function = model.BasicModel(sequence_length, indexer, embed_dim)
 
-    loader = torch.utils.data.DataLoader(dataset, batch_size=128, num_workers=6)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=128, num_workers=6, shuffle=True)
     checkpoint_callback = ModelCheckpoint(every_n_train_steps=1024)
     trainer = pl.Trainer(gpus=1, callbacks=[checkpoint_callback], resume_from_checkpoint='lightning_logs/version_6/checkpoints/epoch=0-step=51199.ckpt')
-    
+
     trainer.fit(lightning_wrapper.LightningWrapper(function), loader)
