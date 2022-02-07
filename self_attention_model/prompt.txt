@@ -1,1 +1,1 @@
-this is a test prompt. as i neglected to include start characters during training, a starting prompt is necessary for resonable results. doesn
+this is a test prompt. as i neglected to include start characters during training, a starting prompt is necessary for reasonable results.

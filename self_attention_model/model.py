@@ -49,7 +49,7 @@ class EmbeddingLayer(nn.Module):
     def interpret(self, x: torch.Tensor, k: int = 3) -> List[int]:
         D, = x.size()
         assert D == self.indexer.size()
-        _, indices = torch.topk(x, k)
+        _, indices = torch.topk(x, k, sorted=True)
         return [self.indexer.to_symbol(i.item()) for i in indices]
 
     def forward(self, x: torch.ByteTensor) -> torch.Tensor:
