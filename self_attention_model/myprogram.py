@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     CONFIG = MyModelConfig(
         chkpt_path="epoch.1-step.573439.ckpt",
-        dummy_prompt="in other words, living an eternity of just about anything is now more terrifying to me than death.",
+        dummy_prompt="in other words, living an eternity of just about anything is now more terrifying to me than death. ",
         device="cpu",
         sequence_length=64,
         embed_dim=192,
