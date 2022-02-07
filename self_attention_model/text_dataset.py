@@ -10,10 +10,10 @@ class TextDataset(torch.utils.data.Dataset):
         self.sequence_length = sequence_length
         self.indexer = data_util.SymbolIndexer()
         with open(path) as text_data:
-          self.data = text_data.read()
+            self.data = text_data.read()
 
     def __len__(self) -> int:
-        return len(self.data) - self.sequence_length
+        return len(self.data) - self.sequence_length + 1
 
     def __getitem__(self, idx: int) -> torch.ByteTensor:
         if idx >= len(self):

@@ -18,7 +18,8 @@ class ResidualSelfAttention(nn.Module):
         self.out = nn.Linear(dim, dim)
 
         mask = torch.ones(length, length).tril() >= 0.5
-        mask = mask.float().masked_fill(mask.logical_not(), float('-inf')).masked_fill(mask, float(0.0))
+        mask = mask.float().masked_fill(mask.logical_not(),
+                                        float('-inf')).masked_fill(mask, float(0.0))
         self.register_buffer("attn_mask", mask)
 
     def forward(self, x):
@@ -65,7 +66,8 @@ class PELayer(nn.Module):
     def __init__(self, length: int, dim: int):
         super().__init__()
         position = torch.arange(length).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, dim, 2) * (-math.log(10000.0) / dim))
+        div_term = torch.exp(torch.arange(0, dim, 2) *
+                             (-math.log(10000.0) / dim))
         pe = torch.zeros(length, 1, dim)
         pe[:, 0, 0::2] = torch.sin(position * div_term)
         pe[:, 0, 1::2] = torch.cos(position * div_term)
