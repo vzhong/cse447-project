@@ -13,8 +13,8 @@ class LightningWrapper(pl.LightningModule):
         return self.f(x)
 
     def training_step(self, batch: torch.Tensor, _):
-        true = self.f.embed.one_hot(batch[1:])
-        pred = F.log_softmax(self.f(batch)[:-1], dim=-1)
+        true = self.f.embed.one_hot(batch)[:, 1:, :]
+        pred = F.log_softmax(self.f(batch)[:, :-1, :], dim=-1)
         loss = -(true * pred).mean()
 
         self.log("train_loss", loss)
