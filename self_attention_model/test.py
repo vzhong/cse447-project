@@ -1,4 +1,5 @@
 import torch
+import pytorch_lightning
 from pathlib import Path
 
 import data_util
@@ -8,6 +9,8 @@ import model
 
 
 if True:
+    pytorch_lightning.seed_everything(0)
+
     target_count = 8192
 
     k = 3
@@ -21,11 +24,14 @@ if True:
 
     text = text_dataset.TextDataset(sequence_length, Path("data") / Path("test.txt"))
 
+    loader = torch.utils.data.DataLoader(text, batch_size=1, num_workers=6, shuffle=True)
+
 
     correct = 0
     total = 0
 
     for sample in text:
+        sample = sample.squeeze(0)
         if total >= target_count:
            break        
 
