@@ -5,10 +5,10 @@ from pathlib import Path
 
 
 class TextDataset(torch.utils.data.Dataset):
-    def __init__(self, sequence_length: int, path: Path):
+    def __init__(self, sequence_length: int, path: Path, indexer: data_util.SymbolIndexer):
         super().__init__()
         self.sequence_length = sequence_length
-        self.indexer = data_util.SymbolIndexer()
+        self.indexer = indexer
         with open(path) as text_data:
             self.data = text_data.read()
 
